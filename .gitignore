@@ -154,3 +154,100 @@ go.work
 
 # Postman tests reports
 tests/postman/reports/
+
+
+## .NET gitignore
+
+## Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+## Visual Studio / Rider / VS Code
+.vs/
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.userprefs
+*.swp
+
+## Rider
+*.DotSettings.user
+_ReSharper.Caches/
+
+## ASP.NET Core specific
+appsettings.*.json
+!appsettings.json
+!appsettings.Development.json
+wwwroot/dist/
+wwwroot/lib/
+*.pfx
+*.snk
+
+## User secrets / environment
+secrets.json
+.env
+.env.*
+!.env.example
+
+## NuGet
+*.nupkg
+*.snupkg
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+*.nuget.props
+*.nuget.targets
+.nuget/
+
+## Entity Framework
+**/Migrations/*.Designer.cs.bak
+
+## Testing / coverage
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+*.coverage
+*.coveragexml
+coverage*.json
+coverage*.xml
+coverage*.info
+TestResults/
+.coverlet/
+
+## Publish output
+[Pp]ublish/
+*.[Pp]ublish.xml
+*.azurePubxml
+PublishScripts/
+
+## Node (if you have JS/TS frontend assets)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+## OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+## Misc
+*.log
+*.tmp
+*.bak
+*.cache
+*.pidb
+*.svclog
+*.scc
