@@ -1,0 +1,71 @@
+@startuml CinemaAbyss_C4_Container
+
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+LAYOUT_WITH_LEGEND()
+
+title CinemaAbyss — To-Be Container Diagram (C4)
+
+Person(user, "Пользователь", "Клиент платформы\n(Web / Mobile)")
+Person(ops, "Ops / DevOps", "Управляет деплоем\nи мониторингом")
+
+System_Boundary(k8s, "Kubernetes Cluster (minikube / cloud)\n[Istio Service Mesh + Circuit Breaker]") {
+
+    System_Boundary(ingress_layer, "Ingress Layer") {
+        Container(ingress, "Nginx Ingress", "Kubernetes Ingress", "Единая точка входа.\nМаршрутизация по host/path.\nTLS termination.")
+    }
+
+    System_Boundary(gateway_domain, "API Gateway Domain") {
+        Container(proxy, "Proxy Service", "ASP.NET Core", "Реализует паттерн Strangler Fig.\nПроцентная маршрутизация /api/movies\nмежду монолитом и микросервисом.\nФасад для всей системы.")
+    }
+
+    System_Boundary(legacy_domain, "Legacy Domain") {
+        Container(monolith, "Monolith", "Go", "Управление пользователями,\nплатежами, подписками.\nОстаточная логика фильмов\n(постепенно вытесняется).")
+    }
+
+    System_Boundary(movies_domain, "Movies Domain") {
+        Container(movies, "Movies Service", "Go", "Метаданные фильмов,\nрейтинги, жанры.\nИзвлечён из монолита\nпо паттерну Strangler Fig.")
+    }
+
+    System_Boundary(events_domain, "Events Domain") {
+        Container(events, "Events Service", "ASP.NET Core", "Событийная шина:\nMovie / User / Payment events.\nProducer + Consumer\nв одном сервисе (MVP).")
+    }
+
+    System_Boundary(data_domain, "Data Domain") {
+        ContainerDb(postgres, "PostgreSQL 14", "PostgreSQL", "Единая реляционная БД.\nТаблицы: users, movies,\nmovie_genres, payments,\nsubscriptions.")
+    }
+
+    System_Boundary(messaging_domain, "Messaging Domain") {
+        Container(kafka, "Apache Kafka", "", "Брокер сообщений.\nТопики: movie-events,\nuser-events, payment-events.")
+        Container(zookeeper, "ZooKeeper", "", "Координация Kafka-брокеров.")
+    }
+
+}
+
+System_Ext(github, "GitHub Actions\n[CI/CD Pipeline]", "Сборка Docker-образов,\nпрогон тестов,\nпуш в ghcr.io.")
+System_Ext(registry, "GitHub Container Registry\n[ghcr.io]", "Хранение Docker-образов\nвсех сервисов.")
+
+' === External relations ===
+Rel(user, ingress, "HTTPS", "HTTP/1.1")
+Rel(ops, github, "git push", "GitHub")
+Rel(github, registry, "docker push", "HTTPS")
+
+' === Ingress → Gateway ===
+Rel(ingress, proxy, "/* (все запросы)", "HTTP REST")
+Rel(ingress, events, "/api/events/*", "HTTP REST")
+
+' === Gateway → Services ===
+Rel(proxy, monolith, "/api/movies (legacy %)\n/api/users\n/api/payments\n/api/subscriptions", "HTTP REST\n:8080")
+Rel(proxy, movies, "/api/movies (migrated %)\nStrangler Fig feature flag", "HTTP REST\n:8081")
+
+' === Data access ===
+Rel(monolith, postgres, "users, payments,\nsubscriptions, movies (legacy)", "SQL / TCP :5432")
+Rel(movies, postgres, "movies,\nmovie_genres", "SQL / TCP :5432")
+
+' === Events ===
+Rel(proxy, events, "/api/events/*", "HTTP REST\n:8082")
+Rel(events, kafka, "Produce:\nmovie/user/payment events", "Kafka Protocol\n:9092")
+Rel(kafka, events, "Consume:\nвсе топики\n(BackgroundService)", "Kafka Protocol\n:9092")
+Rel(kafka, zookeeper, "Координация\nброкеров", "TCP :2181")
+
+@enduml
